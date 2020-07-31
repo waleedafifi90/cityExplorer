@@ -16,7 +16,7 @@ app.listen(PORT, () => {
 });
 
 // localhost:3000/location
-// Getting data from location.json formated as 
+// Getting data from location.json formated as
 // {
 //     "search_query": "seattle",
 //     "formatted_query": "Seattle, WA, USA",
@@ -31,6 +31,24 @@ app.get('/location', (req, res) => {
   res.status(status).send(getLocation);
 });
 
+// localhost:3010/weather
+// Getting data from weather.json formated as 
+// {
+//     "forecast": "Partly cloudy until afternoon.",
+//     "time": "Mon Jan 01 2001"
+// }
+app.get('/weather', (request, response) => {
+  let city = request.query.city;
+  let status = 200;
+  let weatherData = require('./data/weather.json');
+  Weather.weathers= [];
+  weatherData.data.forEach((e) => {
+    new Weather(city, e);
+  });
+  response.status(status).send(Weather.all);
+});
+
+
 // Location Constructor
 function Location(city, data) {
   this.search_query = city;
@@ -40,3 +58,10 @@ function Location(city, data) {
   this.countryCode = data.country_code;
 }
 
+// Weather Constructor
+function Weather(city, data){
+  this.forecast = data.weather.description;
+  this.time = new Date(data.valid_date).toString().slice(0, 15);
+  Weather.all.push(this);
+}
+Weather.all=[];

@@ -37,15 +37,15 @@ app.get('/location', (req, res) => {
 //     "forecast": "Partly cloudy until afternoon.",
 //     "time": "Mon Jan 01 2001"
 // }
-app.get('/weather', (request, response) => {
-  let city = request.query.city;
+app.get('/weather', (req, res) => {
+  let city = req.query.city;
   let status = 200;
   let weatherData = require('./data/weather.json');
   Weather.weathers= [];
   weatherData.data.forEach((e) => {
     new Weather(city, e);
   });
-  response.status(status).send(Weather.all);
+  res.status(status).send(Weather.all);
 });
 
 

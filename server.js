@@ -32,7 +32,7 @@ app.get('/location', (req, res) => {
 });
 
 // localhost:3010/weather
-// Getting data from weather.json formated as 
+// Getting data from weather.json formated as
 // {
 //     "forecast": "Partly cloudy until afternoon.",
 //     "time": "Mon Jan 01 2001"
@@ -46,6 +46,14 @@ app.get('/weather', (req, res) => {
     new Weather(city, e);
   });
   res.status(status).send(Weather.all);
+});
+
+// ********
+// Error route
+// ********
+server.all('*', (req, res) => {
+  let status = 500;
+  res.status(status).send({ responseText: 'Sorry, something went wrong' });
 });
 
 

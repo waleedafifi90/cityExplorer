@@ -47,6 +47,7 @@ let NUMBER_OF_DAY = process.env.NUMBER_OF_DAY;
 // ********
 app.get('/location', handelLocation);
 app.get('/weather', handelWeather);
+app.get('/trails', handelTrails);
 
 
 // localhost:3000/location
@@ -130,6 +131,30 @@ function getWeather(req) {
   return data;
 }
 
+function handelTrails(req, res) {
+  let latitude = req.query.latitude;
+  let longitude = req.query.longitude;
+
+  getTrails(latitude, longitude).then( returnedData => {
+    res.send(returnedData);
+  }).catch((err) => {
+    console.log(err.message);
+  });
+}
+
+function getTrails(lat, lon) {
+  let HIKING_API_KEY = process.env.HIKING_API_KEY;
+  let url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&maxDistance=1000&key=${HIKING_API_KEY}`;
+
+  return superagent.get(url).then( data => {
+    console.log(data.body.trails);
+    return data.body.trails.map( data => {
+      return new Trails(data);
+    });
+  });
+}
+
+
 // Location Constructor
 function Location(city, data) {
   this.search_query = city;
@@ -146,3 +171,21 @@ function Weather(data){
   Weather.all.push(this);
 }
 Weather.all=[];
+
+function Trails(data) {
+  this.name = data.name;
+  this.location = data.location;
+  this.length = data.length;
+  this.stars = data.stars;
+  this.star_votes = data.starVotes;
+  this.summary = data.summary;
+  this.trail_url = data.url;
+  this.conditions = data.conditionStatus;
+  this.condition_date = new Date(data.conditionDate).toLocaleDateString();
+  this.condition_time = new Date(data.conditionDate).toLocaleTimeString('en-US', { hour12: false,
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'});
+  Trails.all.push(this);
+}
+Trails.all = [];

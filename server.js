@@ -44,6 +44,7 @@ app.all('*', (req, res, next) => {
 let GEOCODE_API_KEY = process.env.GEOCODE_API_KEY;
 let WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 let NUMBER_OF_DAY = process.env.NUMBER_OF_DAY;
+let MOVIE_API_KEY = process.env.MOVIE_API_KEY;
 
 
 // ********
@@ -52,6 +53,7 @@ let NUMBER_OF_DAY = process.env.NUMBER_OF_DAY;
 app.get('/location', handelLocation);
 app.get('/weather', handelWeather);
 app.get('/trails', handelTrails);
+app.get('/movies', handelMovies);
 
 
 // localhost:3000/location
@@ -191,13 +193,35 @@ function getTrails(lat, lon) {
 }
 
 
+function handelMovies(req, res) {
+  getMovies(req).then( returnedData => {
+    console.log('response: ', returnedData);
+    res.send(returnedData);
+  }).catch((err) => {
+    console.log(err.message);
+  });
+}
+
+function getMovies(req) {
+  let url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${MOVIE_API_KEY}&language=en-US&page=1&region=${req.query.country_code}`;
+
+  return superagent.get(url).then( data => {
+    console.log(data.body.results);
+    return data.body.results.map( data => {
+      // console.log(item.weather);
+      return new Movie(data);
+    });
+  });
+
+}
+
 // Location Constructor
 function Location(city, data) {
   this.search_query = city;
   this.formatted_query = data.display_name;
   this.latitude = data.lat;
   this.longitude = data.lon;
-  this.countryCode = data.address.country_code;
+  this.countryCode = data.address.country_code.toUpperCase();
 }
 
 // Weather Constructor
@@ -227,6 +251,16 @@ function Trails(data) {
 Trails.all = [];
 
 
+function Movie(data) {
+  this.title = data.title;
+  this.average_votes = data.vote_average;
+  this.total_votes = data.vote_count;
+  this.image_url = `https://image.tmdb.org/t/p/w500${data.poster_path}`;
+  this.popularity = data.popularity;
+  this.released_on = data.release_date;
+  Movie.all.push(this);
+}
+Movie.all = [];
 
 // Database Connection
 client.connect()

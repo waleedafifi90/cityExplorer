@@ -4,6 +4,7 @@ const server = require('express');
 const superagent = require('superagent');
 let cors = require('cors');
 require('dotenv').config();
+var pg = require('pg');
 
 const app = server();
 app.use(cors());
@@ -11,10 +12,13 @@ app.use(cors());
 // Creating new const for PORT and set the value from .env file if not found set it to 3000
 const PORT = process.env.PORT || 3000;
 
+// Database client
+const client = new pg.Client(process.env.DATABASE_URL);
+
 // isten to port from const PORT
-app.listen(PORT, () => {
-  console.log('I am listening to port: ', PORT);
-});
+// app.listen(PORT, () => {
+//   console.log('I am listening to port: ', PORT);
+// });
 
 
 app.all('*', (req, res, next) => {
@@ -100,14 +104,46 @@ function handelLocation(req, res) {
 
 function getLocationData(city) {
   let url = `https://api.locationiq.com/v1/autocomplete.php?key=${GEOCODE_API_KEY}&q=${city}`;
-  let data = superagent.get(url).then((res) => {
-    console.log(res.body[0]);
-    return new Location(city, res.body[0]);
-  });
-  return data;
+  const SQL = `SELECT * FROM location WHERE search_query=$1;`;
+  const values = [city];
 
+  return client.query(SQL, values)
+    .then(result => {
+      if (result.rowCount > 0) {
+        console.log('From SQL');
+        return result.rows[0];
+      } else {
+        return superagent.get(url).then( data => {
+          console.log('From location API');
+
+          console.log('data: ', data.body);
+
+          let locationData = new Location(city, data.body[0]);
+
+          let newSQL = `INSERT INTO location (search_query, formatted_query, latitude, longitude,country_code) VALUES ($1, $2, $3, $4, $5) RETURNING id, search_query, formatted_query, latitude, longitude, country_code;`;
+          console.log('newSQL', newSQL);
+          let newValues = [city, data.body[0].display_name, data.body[0].lat, data.body[0].lon, data.body[0].address.country_code];
+
+          console.log('newValues', newValues);
+
+          // Add the record to the database
+          return client.query(newSQL, newValues)
+            .then(result => {
+              console.log('result.rows', result.rows);
+              console.log('result.rows[0].id', result.rows[0].id);
+
+              locationData.formatted_query = result.rows[0].formatted_query;
+              locationData.latitude = result.rows[0].latitude;
+              locationData.longitude = result.rows[0].longitude;
+              locationData.country_code = result.rows[0].country_code;
+              locationData.id = result.rows[0].id;
+              return locationData;
+            })
+            .catch(console.error);
+        });
+      }
+    });
 }
-
 
 function handelWeather(req, res) {
   getWeather(req).then( returnedData => {
@@ -144,7 +180,7 @@ function handelTrails(req, res) {
 
 function getTrails(lat, lon) {
   let HIKING_API_KEY = process.env.HIKING_API_KEY;
-  let url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&maxDistance=1000&key=${HIKING_API_KEY}`;
+  let url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&maxDistance=100&key=${HIKING_API_KEY}`;
 
   return superagent.get(url).then( data => {
     console.log(data.body.trails);
@@ -189,3 +225,15 @@ function Trails(data) {
   Trails.all.push(this);
 }
 Trails.all = [];
+
+
+
+// Database Connection
+client.connect()
+  .then(() => {
+    app.listen(PORT, () =>
+      console.log(`listening on ${PORT}`)
+    );
+  }).catch((err) => {
+    console.log(err.message);
+  });

@@ -118,9 +118,11 @@ function handelWeather(req, res) {
 }
 
 function getWeather(req) {
-  let url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${req.query.city}&key=${WEATHER_API_KEY}&days=${NUMBER_OF_DAY}`;
+  let lat = req.query.latitude;
+  let lon = req.query.longitude;
+  let url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${WEATHER_API_KEY}&days=${NUMBER_OF_DAY}`;
   let data = superagent.get(url).then((res) => {
-      console.log(res.body.data);
+    console.log(res.body.data);
     return res.body.data.map((e) => {
       return new Weather(e);
     });

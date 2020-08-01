@@ -38,24 +38,30 @@ app.get('/location', (req, res) => {
 //     "time": "Mon Jan 01 2001"
 // }
 app.get('/weather', (req, res) => {
-  let city = req.query.city;
   let status = 200;
-  let weatherData = require('./data/weather.json');
-  Weather.weathers= [];
-  weatherData.data.forEach((e) => {
-    new Weather(city, e);
-  });
+  getWeather(req, res);
   res.status(status).send(Weather.all);
 });
 
 // ********
 // Error route
 // ********
-server.all('*', (req, res) => {
+app.all('*', (req, res) => {
   let status = 500;
   res.status(status).send({ responseText: 'Sorry, something went wrong' });
 });
 
+// ********
+// Functions
+// ********
+function getWeather(req, res) {
+  Weather.all = [];
+  let city = req.query.city;
+  let weatherData = require('./data/weather.json');
+  weatherData.data.map((e) => {
+    new Weather(city, e);
+  });
+}
 
 // Location Constructor
 function Location(city, data) {

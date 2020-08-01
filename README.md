@@ -1,6 +1,7 @@
 # cityExplorer
 
 **Author**: Waleed A. Afifi
+
 **Version**: 1.0.0
 
 ## Overview

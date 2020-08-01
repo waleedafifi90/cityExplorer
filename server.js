@@ -78,13 +78,6 @@ function getLocationData(city) {
   return data;
 
 }
-// app.get('/location', (req, res) => {
-//   let city = req.query.city;
-//   let status = 200;
-//   let data = require('./data/location.json');
-//   let getLocation = new Location(city, data[0]);
-//   res.status(status).send(getLocation);
-// });
 
 // localhost:3010/weather
 // Getting data from weather.json formated as

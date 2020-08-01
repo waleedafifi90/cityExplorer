@@ -45,6 +45,7 @@ let GEOCODE_API_KEY = process.env.GEOCODE_API_KEY;
 let WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 let NUMBER_OF_DAY = process.env.NUMBER_OF_DAY;
 let MOVIE_API_KEY = process.env.MOVIE_API_KEY;
+let YELP_API_KEY = process.env.YELP_API_KEY;
 
 
 // ********
@@ -54,6 +55,7 @@ app.get('/location', handelLocation);
 app.get('/weather', handelWeather);
 app.get('/trails', handelTrails);
 app.get('/movies', handelMovies);
+app.get('/yelp', handelYelp);
 
 
 // localhost:3000/location
@@ -192,7 +194,6 @@ function getTrails(lat, lon) {
   });
 }
 
-
 function handelMovies(req, res) {
   getMovies(req).then( returnedData => {
     console.log('response: ', returnedData);
@@ -213,6 +214,36 @@ function getMovies(req) {
     });
   });
 
+}
+
+function handelYelp(req, res) {
+  getYelp(req).then( returnedData => {
+    console.log('response: ', returnedData);
+    res.send(returnedData);
+  }).catch((err) => {
+    console.log(err.message);
+  });
+}
+
+function getYelp(req) {
+  let lat = req.query.latitude;
+  let lon = req.query.longitude;
+  let page = req.query.page;
+  let offset = (page - 1) * 5;
+  let url = `https://api.yelp.com/v3/businesses/search?term=restaurants&latitude=${lat}&longitude=${lon}&limit=5&offset=${offset}`;
+  let data = superagent
+    .get(url)
+    .set('Authorization', `Bearer ${YELP_API_KEY}`)
+    .then((res) => {
+      console.log(res.body);
+      return res.body.businesses.map((e) => {
+        return new Yelp(e);
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  return data;
 }
 
 // Location Constructor
@@ -261,6 +292,14 @@ function Movie(data) {
   Movie.all.push(this);
 }
 Movie.all = [];
+
+function Yelp(data) {
+  this.name = data.name;
+  this.image_url = data.image_url;
+  this.price = data.price;
+  this.rating = data.rating;
+  this.url = data.url;
+}
 
 // Database Connection
 client.connect()
